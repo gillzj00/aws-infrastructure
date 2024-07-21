@@ -5,5 +5,5 @@ resource "aws_ssm_parameter" "foo" {
 }
 
 resource "aws_s3_bucket" "zachs_new_bucket" {
-  bucket = "bucket-o-chum"
+  bucket = "bucket-o-cum"
 }
