@@ -1,0 +1,43 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'index.html'
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: us-west-2
+
+      - name: Deploy to EC2
+        run: |
+          # Get the instance ID based on Name tag
+          INSTANCE_ID=$(aws ec2 describe-instances \
+            --filters "Name=tag:Name,Values=web-server" \
+            --query "Reservations[].Instances[?State.Name=='running'][].InstanceId" \
+            --output text)
+            
+          # Upload public key for temporary access
+          aws ec2-instance-connect send-ssh-public-key \
+            --instance-id $INSTANCE_ID \
+            --availability-zone us-west-2a \
+            --instance-os-user Administrator \
+            --ssh-public-key "$(cat ~/.ssh/id_rsa.pub)"
+            
+          # Copy the file to the EC2 instance
+          scp -o StrictHostKeyChecking=no \
+            index.html Administrator@forfun.gillzhub.com:C:/inetpub/wwwroot/
