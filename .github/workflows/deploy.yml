@@ -30,6 +30,8 @@ jobs:
             --filters "Name=tag:Name,Values=web-server" \
             --query "Reservations[].Instances[?State.Name=='running'][].InstanceId" \
             --output text)
+
+            ehco $INSTANCE_ID
             
           # Upload public key for temporary access
           aws ec2-instance-connect send-ssh-public-key \

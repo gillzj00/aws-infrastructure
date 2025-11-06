@@ -3,6 +3,9 @@ data "tls_certificate" "github" {
   url = "https://token.actions.githubusercontent.com"
 }
 
+# Get current AWS account id to scope ARNs
+data "aws_caller_identity" "current" {}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
@@ -70,12 +73,53 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         Action = [
           "ec2-instance-connect:SendSSHPublicKey"
         ]
-        Resource = "*"
+        # Restrict to instances in this account and region
+        Resource = [
+          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:instance/*"
+        ]
         Condition = {
           StringEquals = {
             "ec2:osuser": "Administrator"
           }
         }
+      }
+      ,
+      {
+        # Some EC2 Describe* actions do not support resource-level permissions.
+        # Use Resource = "*" for describe/read-only actions but constrain by region
+        # to reduce blast-radius.
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceStatus",
+          "ec2:DescribeTags",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeNetworkInterfaces"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion": "${var.region}"
+          }
+        }
+      },
+      {
+        # Allow sending and checking SSM Run Command invocations. This lets the workflow
+        # run PowerShell scripts (eg. restart IIS/app-pool) using the AWS-RunPowerShellScript
+        # document. Instances must have the SSM agent and an instance profile like
+        # AmazonSSMManagedInstanceCore attached.
+        Effect = "Allow"
+        Action = [
+          "ssm:SendCommand",
+          "ssm:GetCommandInvocation",
+          "ssm:ListCommands",
+          "ssm:ListCommandInvocations",
+          "ssm:DescribeInstanceInformation",
+          "ssm:StartSession",
+          "ssm:DescribeSessions",
+          "ssm:ListSessions"
+        ]
+        Resource = "*"
       }
     ]
   })
