@@ -31,7 +31,7 @@ jobs:
         id: find_instance
         run: |
           INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=web-server" "Name=instance-state-name,Values=running" \
+            --filters "Name=tag:Name,Values=forfun.gillzhub.com-web" \
             --query "Reservations[].Instances[0].InstanceId" --output text)
           if [ -z "$INSTANCE_ID" ]; then
             echo "No running instance found" >&2
