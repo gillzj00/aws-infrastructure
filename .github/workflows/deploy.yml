@@ -24,8 +24,14 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-west-2
 
+      - name: Get deploy bucket name
+        id: bucket
+        run: |
+          BUCKET_NAME=$(aws cloudformation list-exports --query 'Exports[?Name==`deploy-bucket-name`].Value' --output text)
+          echo "bucket_name=$BUCKET_NAME" >> $GITHUB_OUTPUT
+
       - name: Upload index.html to deploy bucket
-        run: aws s3 cp index.html s3://my-deploy-bucket/gillzhub/forfun/index.html
+        run: aws s3 cp index.html "s3://${{ steps.bucket.outputs.bucket_name }}/index.html"
 
       - name: Find instance ID
         id: find_instance
@@ -46,7 +52,7 @@ jobs:
             --document-name "AWS-RunPowerShellScript" \
             --comment "Deploy index.html and restart IIS" \
             --parameters commands='[
-              "aws s3 cp \"s3://my-deploy-bucket/gillzhub/forfun/index.html\" \"C:\\inetpub\\wwwroot\\index.html\"",
+              "aws s3 cp \"s3://${{ steps.bucket.outputs.bucket_name }}/index.html\" \"C:\\inetpub\\wwwroot\\index.html\"",
               "Import-Module WebAdministration; Restart-WebAppPool -Name \"DefaultAppPool\""
             ]' \
             --output json

@@ -64,8 +64,8 @@ resource "aws_iam_role_policy" "github_actions_policy" {
           "s3:ListBucket"
         ]
         Resource = [
-          "arn:aws:s3:::${var.domain_name}/*",
-          "arn:aws:s3:::${var.domain_name}"
+          "${aws_s3_bucket.deploy.arn}/*",
+          aws_s3_bucket.deploy.arn
         ]
       },
       {
