@@ -24,21 +24,29 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
           aws-region: us-west-2
 
-      - name: Deploy to EC2
+      - name: Upload index.html to deploy bucket
+        run: aws s3 cp index.html s3://my-deploy-bucket/gillzhub/forfun/index.html
+
+      - name: Find instance ID
+        id: find_instance
         run: |
-          # Get the instance ID based on Name tag
           INSTANCE_ID=$(aws ec2 describe-instances \
-            --filters "Name=tag:Name,Values=web-server" \
-            --query "Reservations[].Instances[?State.Name=='running'][].InstanceId" \
-            --output text)
-            
-          # Upload public key for temporary access
-          aws ec2-instance-connect send-ssh-public-key \
-            --instance-id $INSTANCE_ID \
-            --availability-zone us-west-2a \
-            --instance-os-user Administrator \
-            --ssh-public-key "$(cat ~/.ssh/id_rsa.pub)"
-            
-          # Copy the file to the EC2 instance
-          scp -o StrictHostKeyChecking=no \
-            index.html Administrator@forfun.gillzhub.com:C:/inetpub/wwwroot/
+            --filters "Name=tag:Name,Values=web-server" "Name=instance-state-name,Values=running" \
+            --query "Reservations[].Instances[0].InstanceId" --output text)
+          if [ -z "$INSTANCE_ID" ]; then
+            echo "No running instance found" >&2
+            exit 1
+          fi
+          echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy file and restart IIS via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids "${{ steps.find_instance.outputs.instance_id }}" \
+            --document-name "AWS-RunPowerShellScript" \
+            --comment "Deploy index.html and restart IIS" \
+            --parameters commands='[
+              "aws s3 cp \"s3://my-deploy-bucket/gillzhub/forfun/index.html\" \"C:\\inetpub\\wwwroot\\index.html\"",
+              "Import-Module WebAdministration; Restart-WebAppPool -Name \"DefaultAppPool\""
+            ]' \
+            --output json
