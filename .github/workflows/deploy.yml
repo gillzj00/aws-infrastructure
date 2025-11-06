@@ -49,5 +49,5 @@ jobs:
               "aws s3 cp \"s3://${{ vars.S3_DEPLOY_BUCKET_NAME }}/index.html\" \"C:\\inetpub\\wwwroot\\index.html\"",
               "Import-Module WebAdministration; Restart-WebAppPool -Name \"DefaultAppPool\""
             ]' \
-            --debug
+            --debug \
             --output json
