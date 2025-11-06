@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<title>forfun — gillzhub</title>
+		<style>
+			:root{--bg:#081229;--card:#0f2740;--accent:#ffb86b;--muted:#9bb0c6}
+			body{margin:0;font-family:Inter,Segoe UI,Helvetica,Arial,sans-serif;background:linear-gradient(135deg,var(--bg),#05213a);color:#e6f0fb;display:flex;min-height:100vh;align-items:center;justify-content:center}
+			.card{background:linear-gradient(180deg,rgba(255,255,255,0.03),rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.04);padding:2.2rem;border-radius:14px;box-shadow:0 8px 30px rgba(2,6,23,0.6);max-width:720px;width:96%}
+			h1{margin:0 0 .2rem;font-size:1.8rem;letter-spacing:-0.5px}
+			p.lead{margin:0 0 1rem;color:var(--muted)}
+			.badge{display:inline-block;background:linear-gradient(90deg,var(--accent),#ffd8a8);color:#082028;padding:.25rem .6rem;border-radius:999px;font-weight:700;margin-right:.6rem}
+			.fun{font-size:3rem;margin:0 .4rem;display:inline-block;transform-origin:center;animation:float 3s ease-in-out infinite}
+			@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px) rotate(-6deg)}}
+			footer{margin-top:1.1rem;color:var(--muted);font-size:.9rem}
+			a.cta{display:inline-block;margin-top:.8rem;padding:.6rem 1rem;background:rgba(255,184,107,0.12);border:1px solid rgba(255,184,107,0.16);color:var(--accent);border-radius:10px;text-decoration:none}
+		</style>
+	</head>
+	<body>
+		<div class="card" role="main">
+			<div style="display:flex;align-items:center">
+				<div class="badge">forfun</div>
+				<h1>Welcome to forfun.gillzhub.com</h1>
+			</div>
+			<p class="lead">A tiny playground page served from S3 — feel free to edit and make it delightfully weird.</p>
+
+			<div style="display:flex;align-items:center">
+				<div class="fun" id="emoji">🎉</div>
+				<div>
+					<p style="margin:.2rem 0 0">Hostname: <strong id="host">unknown</strong></p>
+					<a class="cta" href="#" id="surprise">Click for a surprise</a>
+				</div>
+			</div>
+
+			<footer>Static site • <span id="time"></span></footer>
+		</div>
+
+		<script>
+			// Small interactive bits — safe to run in a static S3 site
+			document.getElementById('time').textContent = new Date().toLocaleString();
+			// show a fake hostname (S3 won't provide the server hostname, so we keep playful)
+			document.getElementById('host').textContent = location.hostname || 'local'
+
+			const emojis = ['✨','🚀','🌈','🦄','😎','🤖','🍕','🎉']
+			document.getElementById('surprise').addEventListener('click', e => {
+				e.preventDefault()
+				const el = document.getElementById('emoji')
+				const pick = emojis[Math.floor(Math.random()*emojis.length)]
+				el.textContent = pick
+				el.style.transform = 'translateY(-8px) rotate(-6deg)'
+				setTimeout(()=>el.style.transform='translateY(0) rotate(0)',700)
+			})
+		</script>
+	</body>
+</html>

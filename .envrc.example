@@ -1,0 +1,5 @@
+# AWS Profile for this workspace
+export AWS_PROFILE=your-profile-name
+
+# AWS Region for this workspace
+export AWS_REGION=us-west-2
