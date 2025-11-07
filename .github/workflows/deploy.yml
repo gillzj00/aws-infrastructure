@@ -39,6 +39,12 @@ jobs:
           fi
           echo "instance_id=$INSTANCE_ID" >> $GITHUB_OUTPUT
 
+      - name: Generate presigned URL
+        id: presign
+        run: |
+          PRESIGNED_URL=$(aws s3 presign "s3://${{ vars.S3_DEPLOY_BUCKET_NAME }}/index.html" --expires-in 300)
+          echo "url=$PRESIGNED_URL" >> $GITHUB_OUTPUT
+
       - name: Deploy file and restart IIS via SSM
         run: |
           # Send the command and capture its ID
@@ -48,8 +54,8 @@ jobs:
             --comment "Deploy index.html and restart IIS" \
             --parameters commands='[
               "Write-Host \"Starting deployment at $(Get-Date)\"",
-              "aws s3 cp \"s3://${{ steps.bucket.outputs.bucket_name }}/index.html\" \"C:\\inetpub\\wwwroot\\index.html\"",
-              "if ($LASTEXITCODE -ne 0) { Write-Error \"Failed to copy file from S3\"; exit 1 }",
+              "Invoke-WebRequest -Uri \"${{ steps.presign.outputs.url }}\" -OutFile \"C:\\inetpub\\wwwroot\\index.html\"",
+              "if (-not (Test-Path \"C:\\inetpub\\wwwroot\\index.html\")) { Write-Error \"Failed to download file from S3\"; exit 1 }",
               "Write-Host \"File copied successfully\"",
               "Import-Module WebAdministration",
               "Write-Host \"Current app pool status: $((Get-WebAppPool -Name DefaultAppPool).state)\"",
