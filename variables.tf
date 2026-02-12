@@ -33,3 +33,9 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "notification_email" {
+  description = "Email address for AWS Budget spending alert notifications"
+  type        = string
+  sensitive   = true
+}

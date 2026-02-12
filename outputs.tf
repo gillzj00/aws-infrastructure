@@ -28,3 +28,13 @@ output "certificate_validation_records" {
     }
   }
 }
+
+output "budget_sns_topic_arn" {
+  description = "ARN of the SNS topic for budget alert notifications"
+  value       = aws_sns_topic.budget_alerts.arn
+}
+
+output "monthly_budget_name" {
+  description = "Name of the monthly cost budget"
+  value       = aws_budgets_budget.monthly.name
+}
