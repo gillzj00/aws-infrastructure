@@ -20,6 +20,7 @@ permissions:
 env:
   TF_LOG: INFO
   AWS_REGION: ${{ secrets.AWS_REGION }}
+  TF_VAR_notification_email: ${{ secrets.TF_VAR_NOTIFICATION_EMAIL }}
 
 jobs:
   plan:
