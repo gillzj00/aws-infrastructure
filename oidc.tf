@@ -9,7 +9,8 @@ data "aws_caller_identity" "current" {}
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
-  client_id_list = ["sts.amazonaws.com"]
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
 
   tags = merge(
     var.tags,
@@ -32,8 +33,11 @@ resource "aws_iam_role" "github_actions" {
           Federated = aws_iam_openid_connect_provider.github.arn
         }
         Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
           StringLike = {
-            "token.actions.githubusercontent.com:sub": "repo:gillzj00/aws-infrastructure:*"
+            "token.actions.githubusercontent.com:sub" = "repo:gillzj00/aws-infrastructure:*"
           }
         }
       }
@@ -79,7 +83,7 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         ]
         Condition = {
           StringEquals = {
-            "ec2:osuser": "Administrator"
+            "ec2:osuser" : "Administrator"
           }
         }
       }
@@ -99,7 +103,7 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         Resource = "*"
         Condition = {
           StringEquals = {
-            "aws:RequestedRegion": "${var.region}"
+            "aws:RequestedRegion" : "${var.region}"
           }
         }
       },
@@ -127,6 +131,6 @@ resource "aws_iam_role_policy" "github_actions_policy" {
 
 # Output the role ARN for use in GitHub Actions
 output "github_actions_role_arn" {
-  value = aws_iam_role.github_actions.arn
+  value       = aws_iam_role.github_actions.arn
   description = "ARN of the GitHub Actions OIDC role"
 }
