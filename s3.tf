@@ -20,6 +20,19 @@ resource "aws_s3_bucket_public_access_block" "deploy" {
   restrict_public_buckets = true
 }
 
+# Explicitly declare SSE — S3 encrypts by default since Jan 2023, but enterprise
+# policy expects this to be declared in code so auditors can verify at a glance.
+resource "aws_s3_bucket_server_side_encryption_configuration" "deploy" {
+  bucket = aws_s3_bucket.deploy.id
+
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = "aws:kms"
+    }
+    bucket_key_enabled = true
+  }
+}
+
 # Enable versioning for the bucket
 resource "aws_s3_bucket_versioning" "deploy" {
   bucket = aws_s3_bucket.deploy.id

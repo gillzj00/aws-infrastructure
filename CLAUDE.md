@@ -55,8 +55,8 @@ cd bootstrap && terraform init && terraform apply -var="bucket_name=<name>"
 
 ## CI/CD (GitHub Actions)
 
-- `.github/workflows/main.yml` — Two-job workflow: `plan` job runs on PRs and pushes to `main` (fmt, init, validate, plan, PR comment); `apply` job runs on push to `main` only, gated by the `production` GitHub Environment (requires manual approval). Plan artifact is passed between jobs. Uses OIDC for AWS auth.
-- `.github/workflows/deploy.yml` — On push to `main` (when `index.html` changes) or manual dispatch: uploads `index.html` to S3, sends SSM command to EC2 to download via presigned URL and restart IIS.
+- `.github/workflows/terraform-plan-apply.yml` — Two-job workflow: `plan` job runs on PRs and pushes to `main` (fmt, init, validate, plan, PR comment); `apply` job runs on push to `main` only, gated by the `production` GitHub Environment (requires manual approval). Plan artifact is passed between jobs. Uses OIDC for AWS auth. Concurrency group prevents parallel runs.
+- `.github/workflows/deploy-site.yml` — On push to `main` (when `index.html` changes) or manual dispatch: uploads `index.html` to S3, sends SSM command to EC2 to download via presigned URL and restart IIS.
 
 ## Conventions
 
