@@ -9,7 +9,8 @@ data "aws_caller_identity" "current" {}
 resource "aws_iam_openid_connect_provider" "github" {
   url = "https://token.actions.githubusercontent.com"
 
-  client_id_list = ["sts.amazonaws.com"]
+  client_id_list  = ["sts.amazonaws.com"]
+  thumbprint_list = [data.tls_certificate.github.certificates[0].sha1_fingerprint]
 
   tags = merge(
     var.tags,
@@ -32,8 +33,11 @@ resource "aws_iam_role" "github_actions" {
           Federated = aws_iam_openid_connect_provider.github.arn
         }
         Condition = {
+          StringEquals = {
+            "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com"
+          }
           StringLike = {
-            "token.actions.githubusercontent.com:sub": "repo:gillzj00/aws-infrastructure:*"
+            "token.actions.githubusercontent.com:sub" = "repo:gillzj00/aws-infrastructure:*"
           }
         }
       }
@@ -79,9 +83,47 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         ]
         Condition = {
           StringEquals = {
-            "ec2:osuser": "Administrator"
+            "ec2:osuser" : "Administrator"
           }
         }
+      }
+      ,
+      {
+        # Some EC2 Describe* actions do not support resource-level permissions.
+        # Use Resource = "*" for describe/read-only actions but constrain by region
+        # to reduce blast-radius.
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceStatus",
+          "ec2:DescribeTags",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeNetworkInterfaces"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion" : "${var.region}"
+          }
+        }
+      },
+      {
+        # Allow sending and checking SSM Run Command invocations. This lets the workflow
+        # run PowerShell scripts (eg. restart IIS/app-pool) using the AWS-RunPowerShellScript
+        # document. Instances must have the SSM agent and an instance profile like
+        # AmazonSSMManagedInstanceCore attached.
+        Effect = "Allow"
+        Action = [
+          "ssm:SendCommand",
+          "ssm:GetCommandInvocation",
+          "ssm:ListCommands",
+          "ssm:ListCommandInvocations",
+          "ssm:DescribeInstanceInformation",
+          "ssm:StartSession",
+          "ssm:DescribeSessions",
+          "ssm:ListSessions"
+        ]
+        Resource = "*"
       }
       ,
       {
@@ -127,6 +169,6 @@ resource "aws_iam_role_policy" "github_actions_policy" {
 
 # Output the role ARN for use in GitHub Actions
 output "github_actions_role_arn" {
-  value = aws_iam_role.github_actions.arn
+  value       = aws_iam_role.github_actions.arn
   description = "ARN of the GitHub Actions OIDC role"
 }

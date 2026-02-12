@@ -12,9 +12,11 @@ terraform {
     }
   }
 
+  # Backend values are placeholders — overridden by -backend-config flags in CI
+  # and during local `terraform init`. See .github/workflows/main.yml.
   backend "s3" {
-    bucket         = "terraform-state-dev-174230265051"
-    key            = "dev/aws-infrastructure/terraform.tfstate"
+    bucket         = "PLACEHOLDER"
+    key            = "PLACEHOLDER"
     region         = "us-west-2"
     dynamodb_table = "terraform-state-locks"
     encrypt        = true

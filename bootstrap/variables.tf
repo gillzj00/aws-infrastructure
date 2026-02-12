@@ -13,7 +13,7 @@ variable "environment" {
 variable "bucket_name" {
   description = "Name of the S3 bucket to create for storing Terraform state. Must be globally unique."
   type        = string
-  default     = "terraform-state-dev-174230265051"
+  default     = ""
 }
 
 variable "dynamodb_table_name" {
