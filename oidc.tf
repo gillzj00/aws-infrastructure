@@ -125,6 +125,44 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         ]
         Resource = "*"
       }
+      ,
+      {
+        # Some EC2 Describe* actions do not support resource-level permissions.
+        # Use Resource = "*" for describe/read-only actions but constrain by region
+        # to reduce blast-radius.
+        Effect = "Allow"
+        Action = [
+          "ec2:DescribeInstances",
+          "ec2:DescribeInstanceStatus",
+          "ec2:DescribeTags",
+          "ec2:DescribeAddresses",
+          "ec2:DescribeNetworkInterfaces"
+        ]
+        Resource = "*"
+        Condition = {
+          StringEquals = {
+            "aws:RequestedRegion": "${var.region}"
+          }
+        }
+      },
+      {
+        # Allow sending and checking SSM Run Command invocations. This lets the workflow
+        # run PowerShell scripts (eg. restart IIS/app-pool) using the AWS-RunPowerShellScript
+        # document. Instances must have the SSM agent and an instance profile like
+        # AmazonSSMManagedInstanceCore attached.
+        Effect = "Allow"
+        Action = [
+          "ssm:SendCommand",
+          "ssm:GetCommandInvocation",
+          "ssm:ListCommands",
+          "ssm:ListCommandInvocations",
+          "ssm:DescribeInstanceInformation",
+          "ssm:StartSession",
+          "ssm:DescribeSessions",
+          "ssm:ListSessions"
+        ]
+        Resource = "*"
+      }
     ]
   })
 }
