@@ -44,11 +44,11 @@ resource "aws_route53_zone" "primary" {
 
 # EC2 Instance
 resource "aws_instance" "web" {
-  ami                         = data.aws_ami.windows.id
-  instance_type               = var.instance_type
-  subnet_id                   = data.aws_subnets.default.ids[0]
-  vpc_security_group_ids      = [aws_security_group.instance_sg.id]
-  iam_instance_profile        = aws_iam_instance_profile.ec2_instance_profile.name
+  ami                    = data.aws_ami.windows.id
+  instance_type          = var.instance_type
+  subnet_id              = data.aws_subnets.default.ids[0]
+  vpc_security_group_ids = [aws_security_group.instance_sg.id]
+  iam_instance_profile   = aws_iam_instance_profile.ec2_instance_profile.name
 
   associate_public_ip_address = true
 
