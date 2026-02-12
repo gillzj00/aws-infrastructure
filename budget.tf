@@ -20,7 +20,7 @@ resource "aws_ssm_parameter" "notification_email" {
 # SNS topic + policy for budget alerts
 # ──────────────────────────────────────────────
 resource "aws_sns_topic" "budget_alerts" {
-  name = "${var.domain_name}-budget-alerts"
+  name = "${replace(var.domain_name, ".", "-")}-budget-alerts"
 
   tags = merge(
     var.tags,
@@ -65,7 +65,7 @@ resource "aws_sns_topic_subscription" "budget_email" {
 # Monthly cost budget — $50 with 50/80/100% alerts
 # ──────────────────────────────────────────────
 resource "aws_budgets_budget" "monthly" {
-  name         = "${var.domain_name}-monthly-budget"
+  name         = "${replace(var.domain_name, ".", "-")}-monthly-budget"
   budget_type  = "COST"
   limit_amount = "50"
   limit_unit   = "USD"
