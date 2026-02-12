@@ -108,60 +108,41 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         }
       },
       {
-        # Allow sending and checking SSM Run Command invocations. This lets the workflow
-        # run PowerShell scripts (eg. restart IIS/app-pool) using the AWS-RunPowerShellScript
-        # document. Instances must have the SSM agent and an instance profile like
-        # AmazonSSMManagedInstanceCore attached.
+        # ssm:SendCommand requires both the target instance(s) AND the SSM document
+        # as resources. Scoped to this account/region's instances and the specific
+        # document used by the deploy workflow.
         Effect = "Allow"
         Action = [
-          "ssm:SendCommand",
-          "ssm:GetCommandInvocation",
-          "ssm:ListCommands",
-          "ssm:ListCommandInvocations",
-          "ssm:DescribeInstanceInformation",
-          "ssm:StartSession",
-          "ssm:DescribeSessions",
-          "ssm:ListSessions"
+          "ssm:SendCommand"
         ]
-        Resource = "*"
-      }
-      ,
-      {
-        # Some EC2 Describe* actions do not support resource-level permissions.
-        # Use Resource = "*" for describe/read-only actions but constrain by region
-        # to reduce blast-radius.
-        Effect = "Allow"
-        Action = [
-          "ec2:DescribeInstances",
-          "ec2:DescribeInstanceStatus",
-          "ec2:DescribeTags",
-          "ec2:DescribeAddresses",
-          "ec2:DescribeNetworkInterfaces"
+        Resource = [
+          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:instance/*",
+          "arn:aws:ssm:${var.region}::document/AWS-RunPowerShellScript"
         ]
-        Resource = "*"
-        Condition = {
-          StringEquals = {
-            "aws:RequestedRegion": "${var.region}"
-          }
-        }
       },
       {
-        # Allow sending and checking SSM Run Command invocations. This lets the workflow
-        # run PowerShell scripts (eg. restart IIS/app-pool) using the AWS-RunPowerShellScript
-        # document. Instances must have the SSM agent and an instance profile like
-        # AmazonSSMManagedInstanceCore attached.
+        # These read-only SSM actions do not support resource-level permissions,
+        # so Resource = "*" is required. They only return data, not mutate state.
         Effect = "Allow"
         Action = [
-          "ssm:SendCommand",
           "ssm:GetCommandInvocation",
           "ssm:ListCommands",
           "ssm:ListCommandInvocations",
-          "ssm:DescribeInstanceInformation",
+          "ssm:DescribeInstanceInformation"
+        ]
+        Resource = "*"
+      },
+      {
+        # SSM sessions scoped to instances in this account/region.
+        Effect = "Allow"
+        Action = [
           "ssm:StartSession",
           "ssm:DescribeSessions",
           "ssm:ListSessions"
         ]
-        Resource = "*"
+        Resource = [
+          "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:instance/*"
+        ]
       }
     ]
   })
