@@ -1,0 +1,15 @@
+{
+  "name": "guestbook-api",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Guestbook API with GitHub OAuth — runs on AWS Lambda",
+  "scripts": {
+    "build": "node scripts/build.mjs"
+  },
+  "dependencies": {
+    "@aws-sdk/client-dynamodb": "^3.700.0",
+    "@aws-sdk/lib-dynamodb": "^3.700.0",
+    "@aws-sdk/client-ssm": "^3.700.0"
+  }
+}

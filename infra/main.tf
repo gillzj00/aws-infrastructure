@@ -100,3 +100,16 @@ resource "aws_route53_record" "site_alias" {
     evaluate_target_health = true
   }
 }
+
+# DNS record for API Gateway custom domain
+resource "aws_route53_record" "api_alias" {
+  zone_id = aws_route53_zone.primary.zone_id
+  name    = "api.${var.domain_name}"
+  type    = "A"
+
+  alias {
+    name                   = aws_apigatewayv2_domain_name.api.domain_name_configuration[0].target_domain_name
+    zone_id                = aws_apigatewayv2_domain_name.api.domain_name_configuration[0].hosted_zone_id
+    evaluate_target_health = false
+  }
+}

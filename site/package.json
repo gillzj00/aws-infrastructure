@@ -1,0 +1,21 @@
+{
+  "name": "guestbook-site",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Guestbook SPA — React + Vite, deployed to CloudFront + S3",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.1.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^6.1.0"
+  }
+}

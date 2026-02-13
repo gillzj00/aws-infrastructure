@@ -39,3 +39,20 @@ variable "notification_email" {
   type        = string
   sensitive   = true
 }
+
+variable "github_oauth_client_id" {
+  description = "GitHub OAuth App client ID for guestbook authentication"
+  type        = string
+}
+
+variable "github_oauth_client_secret" {
+  description = "GitHub OAuth App client secret for guestbook authentication"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_signing_key" {
+  description = "Secret key used to sign JWT tokens for guestbook sessions (min 32 chars)"
+  type        = string
+  sensitive   = true
+}
