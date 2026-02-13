@@ -8,7 +8,9 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
   DynamoDBDocumentClient,
+  GetCommand,
   PutCommand,
+  DeleteCommand,
   ScanCommand,
 } from "@aws-sdk/lib-dynamodb";
 
@@ -23,6 +25,32 @@ export async function putEntry(entry) {
     new PutCommand({
       TableName: TABLE_NAME,
       Item: entry,
+    })
+  );
+}
+
+/**
+ * Fetch a single entry by its primary key.
+ * Returns the entry object or null if not found.
+ */
+export async function getEntry(entryId) {
+  const { Item } = await client.send(
+    new GetCommand({
+      TableName: TABLE_NAME,
+      Key: { entryId },
+    })
+  );
+  return Item || null;
+}
+
+/**
+ * Delete a guestbook entry by its primary key.
+ */
+export async function deleteEntry(entryId) {
+  await client.send(
+    new DeleteCommand({
+      TableName: TABLE_NAME,
+      Key: { entryId },
     })
   );
 }

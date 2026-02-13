@@ -8,7 +8,7 @@ resource "aws_apigatewayv2_api" "guestbook" {
 
   cors_configuration {
     allow_origins     = ["https://${var.domain_name}"]
-    allow_methods     = ["GET", "POST", "OPTIONS"]
+    allow_methods     = ["GET", "POST", "DELETE", "OPTIONS"]
     allow_headers     = ["Content-Type", "Authorization"]
     allow_credentials = true # Required for cross-subdomain cookies
     max_age           = 86400
@@ -69,6 +69,12 @@ resource "aws_apigatewayv2_route" "guestbook_list" {
 resource "aws_apigatewayv2_route" "guestbook_sign" {
   api_id    = aws_apigatewayv2_api.guestbook.id
   route_key = "POST /guestbook"
+  target    = "integrations/${aws_apigatewayv2_integration.guestbook_lambda.id}"
+}
+
+resource "aws_apigatewayv2_route" "guestbook_delete" {
+  api_id    = aws_apigatewayv2_api.guestbook.id
+  route_key = "DELETE /guestbook/{entryId}"
   target    = "integrations/${aws_apigatewayv2_integration.guestbook_lambda.id}"
 }
 

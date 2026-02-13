@@ -1,9 +1,10 @@
 /**
- * Guestbook routes — list and sign.
+ * Guestbook routes — list, sign, and delete.
  *
  * Routes:
- *   GET  /guestbook → List all entries (public, no auth required)
- *   POST /guestbook → Sign the guestbook (requires valid session cookie)
+ *   GET    /guestbook            → List all entries (public, no auth required)
+ *   POST   /guestbook            → Sign the guestbook (requires valid session cookie)
+ *   DELETE /guestbook/{entryId}  → Delete own entry (requires valid session cookie)
  *
  * Entry schema in DynamoDB:
  *   entryId   (S) — UUIDv4, hash key
@@ -15,7 +16,7 @@
 import { randomUUID } from "node:crypto";
 import { getSecrets } from "../lib/ssm.mjs";
 import { verifyToken } from "../lib/jwt.mjs";
-import { putEntry, listEntries } from "../lib/dynamodb.mjs";
+import { putEntry, getEntry, deleteEntry, listEntries } from "../lib/dynamodb.mjs";
 import { json, error } from "../lib/response.mjs";
 
 const MAX_MESSAGE_LENGTH = 500;
@@ -84,4 +85,41 @@ export async function sign(event) {
   await putEntry(entry);
 
   return json(201, { entry });
+}
+
+// ────────────────────────────────────────────
+// DELETE /guestbook/{entryId} — auth required, own entries only
+// ────────────────────────────────────────────
+export async function remove(event) {
+  // Verify authentication
+  const token = getSessionCookie(event);
+  if (!token) {
+    return error(401, "You must be logged in to delete an entry");
+  }
+
+  const { jwtSigningKey } = await getSecrets();
+  const user = verifyToken(token, jwtSigningKey);
+  if (!user) {
+    return error(401, "Invalid or expired session");
+  }
+
+  // Extract entryId from path parameters
+  const entryId = event.pathParameters?.entryId;
+  if (!entryId) {
+    return error(400, "Entry ID is required");
+  }
+
+  // Fetch the entry to verify ownership
+  const entry = await getEntry(entryId);
+  if (!entry) {
+    return error(404, "Entry not found");
+  }
+
+  if (entry.login !== user.login) {
+    return error(403, "You can only delete your own entries");
+  }
+
+  await deleteEntry(entryId);
+
+  return json(200, { ok: true });
 }
