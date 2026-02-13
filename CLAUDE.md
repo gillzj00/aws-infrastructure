@@ -8,7 +8,10 @@ Terraform infrastructure-as-code repository provisioning a web stack on AWS for 
 
 ## Common Commands
 
+All Terraform commands run from the `infra/` directory:
 ```bash
+cd infra
+
 # Initialize Terraform (fetch providers, configure S3 backend)
 terraform init
 
@@ -37,7 +40,7 @@ cd bootstrap && terraform init && terraform apply -var="bucket_name=<name>"
 
 **Traffic flow:** Internet → ALB (port 443/HTTPS with ACM cert) → Target Group (port 80) → EC2 Windows/IIS instance
 
-**Key resources by file:**
+**Key resources by file (`infra/`):**
 - `provider.tf` — AWS provider config + S3/DynamoDB remote backend
 - `main.tf` — Route53 hosted zone, EC2 instance (Windows Server, IIS via user data), data sources (default VPC/subnets, latest Windows AMI, caller identity)
 - `lb.tf` — ALB, target group, HTTPS listener
@@ -47,6 +50,8 @@ cd bootstrap && terraform init && terraform apply -var="bucket_name=<name>"
 - `iam_instance.tf` — EC2 instance IAM role for SSM + S3 read access
 - `s3.tf` — Deployment bucket (versioned, public access blocked)
 - `variables.tf` / `outputs.tf` — Input variables and output values
+
+**Web application (`site/`):**
 - `index.html` — Static site content deployed to EC2/IIS
 
 **State management:** Remote S3 backend (bucket name configured via `-backend-config` in CI and local init) with DynamoDB locking (`terraform-state-locks`), encryption enabled.
@@ -56,7 +61,7 @@ cd bootstrap && terraform init && terraform apply -var="bucket_name=<name>"
 ## CI/CD (GitHub Actions)
 
 - `.github/workflows/terraform-plan-apply.yml` — Two-job workflow: `plan` job runs on PRs and pushes to `main` (fmt, init, validate, plan, PR comment); `apply` job runs on push to `main` only, gated by the `production` GitHub Environment (requires manual approval). Plan artifact is passed between jobs. Uses OIDC for AWS auth. Concurrency group prevents parallel runs.
-- `.github/workflows/deploy-site.yml` — On push to `main` (when `index.html` changes) or manual dispatch: uploads `index.html` to S3, sends SSM command to EC2 to download via presigned URL and restart IIS.
+- `.github/workflows/deploy-site.yml` — On push to `main` (when `site/` changes) or manual dispatch: uploads `site/index.html` to S3, sends SSM command to EC2 to download via presigned URL and restart IIS.
 
 ## Conventions
 
