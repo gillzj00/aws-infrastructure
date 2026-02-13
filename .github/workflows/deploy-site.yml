@@ -6,7 +6,7 @@ on:
     branches:
       - main
     paths:
-      - 'index.html'
+      - 'site/**'
   
 permissions:
   id-token: write
@@ -25,7 +25,7 @@ jobs:
           aws-region: us-west-2
 
       - name: Upload index.html to deploy bucket
-        run: aws s3 cp index.html "s3://${{ vars.S3_DEPLOY_BUCKET_NAME }}/index.html"
+        run: aws s3 cp site/index.html "s3://${{ vars.S3_DEPLOY_BUCKET_NAME }}/index.html"
 
       - name: Find instance ID
         id: find_instance
