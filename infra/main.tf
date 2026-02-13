@@ -1,31 +1,3 @@
-# Data sources
-data "aws_vpc" "default" {
-  default = true
-}
-
-data "aws_subnets" "default" {
-  filter {
-    name   = "vpc-id"
-    values = [data.aws_vpc.default.id]
-  }
-}
-
-# Use first available public subnet(s) for ALB
-locals {
-  alb_subnets = slice(data.aws_subnets.default.ids, 0, 2)
-}
-
-# Find a recent Windows Server AMI
-data "aws_ami" "windows" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["Windows_Server-2019-English-Full-Base-*", "Windows_Server-2022-English-Full-Base-*"]
-  }
-}
-
 # Route53 zone
 resource "aws_route53_zone" "primary" {
   name    = var.hosted_zone_name
@@ -40,55 +12,7 @@ resource "aws_route53_zone" "primary" {
   )
 }
 
-
-
-# EC2 Instance
-resource "aws_instance" "web" {
-  ami                    = data.aws_ami.windows.id
-  instance_type          = var.instance_type
-  subnet_id              = data.aws_subnets.default.ids[0]
-  vpc_security_group_ids = [aws_security_group.instance_sg.id]
-  iam_instance_profile   = aws_iam_instance_profile.ec2_instance_profile.name
-
-  associate_public_ip_address = true
-
-  # Install and configure IIS, SSM agent
-  user_data = <<-POWERSHELL
-    <powershell>
-    # Install IIS
-    Install-WindowsFeature -Name Web-Server -IncludeManagementTools
-
-    # Create initial index.html
-    $content = "<html><body><h1>${var.domain_name}</h1><p>Hostname: $env:COMPUTERNAME</p></body></html>"
-    Set-Content -Path C:\\inetpub\\wwwroot\\index.html -Value $content -Encoding UTF8
-
-    # Verify SSM agent is running (it should be pre-installed on Windows AMIs)
-    $service = Get-Service -Name "AmazonSSMAgent" -ErrorAction SilentlyContinue
-    if ($service -eq $null) {
-        Write-Host "Installing SSM agent..."
-        $progressPreference = 'silentlyContinue'
-        Invoke-WebRequest https://s3.amazonaws.com/ec2-downloads-windows/SSMAgent/latest/windows_amd64/AmazonSSMAgent.msi -OutFile $env:TEMP\\SSMAgent_latest.msi
-        Start-Process msiexec.exe -Wait -ArgumentList "/i $env:TEMP\\SSMAgent_latest.msi /qn"
-        Start-Service AmazonSSMAgent
-    } else {
-        Write-Host "SSM agent already installed"
-        if ($service.Status -ne "Running") {
-            Start-Service AmazonSSMAgent
-        }
-    }
-    </powershell>
-  POWERSHELL
-
-  tags = merge(
-    var.tags,
-    {
-      Name        = "${var.domain_name}-web"
-      Environment = var.environment
-    }
-  )
-}
-
-# DNS record for the website
+# DNS record for the website (CloudFront)
 resource "aws_route53_record" "site_alias" {
   zone_id = aws_route53_zone.primary.zone_id
   name    = var.domain_name

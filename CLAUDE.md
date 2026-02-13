@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Terraform infrastructure-as-code repository provisioning a web stack on AWS for `gillzhub.com`. Manages an ALB with HTTPS, EC2 Windows/IIS instance, Route53 DNS, ACM certificates, S3 deployment bucket, and GitHub Actions OIDC integration.
+Terraform infrastructure-as-code repository provisioning a serverless web stack on AWS for `gillzhub.com`. Manages CloudFront CDN, S3 static hosting, API Gateway + Lambda guestbook backend, DynamoDB, Route53 DNS, ACM certificates, and GitHub Actions OIDC integration.
 
 ## Common Commands
 
@@ -38,30 +38,36 @@ cd bootstrap && terraform init && terraform apply -var="bucket_name=<name>"
 
 ## Architecture
 
-**Traffic flow:** Internet → ALB (port 443/HTTPS with ACM cert) → Target Group (port 80) → EC2 Windows/IIS instance
+**Traffic flow (static):** Internet → Route53 → CloudFront (CDN) → S3 (React SPA)
+**Traffic flow (API):** Internet → Route53 → API Gateway (HTTP API v2) → Lambda (Node.js 22) → DynamoDB
 
 **Key resources by file (`infra/`):**
-- `provider.tf` — AWS provider config + S3/DynamoDB remote backend
-- `main.tf` — Route53 hosted zone, EC2 instance (Windows Server, IIS via user data), data sources (default VPC/subnets, latest Windows AMI, caller identity)
-- `lb.tf` — ALB, target group, HTTPS listener
-- `security.tf` — Security groups: ALB (inbound 443 from world), EC2 (inbound 80 from ALB only)
-- `certificates.tf` — ACM certificate + Route53 DNS validation records
+- `provider.tf` — AWS provider config (us-west-2 + us-east-1 for CloudFront) + S3/DynamoDB remote backend
+- `main.tf` — Route53 hosted zone + DNS records (CloudFront alias, API Gateway alias)
+- `cloudfront.tf` — CloudFront distribution, S3 site bucket, Origin Access Control
+- `api_gateway.tf` — HTTP API v2, Lambda integration, routes, custom domain
+- `lambda.tf` — Lambda function, IAM role, CloudWatch logs
+- `dynamodb.tf` — Guestbook DynamoDB table
+- `certificates.tf` — ACM certificates (CloudFront in us-east-1, API Gateway in us-west-2) + DNS validation
 - `oidc.tf` — GitHub Actions OIDC provider + IAM role (scoped to this repo)
-- `iam_instance.tf` — EC2 instance IAM role for SSM + S3 read access
-- `s3.tf` — Deployment bucket (versioned, public access blocked)
+- `secrets.tf` — SSM Parameter Store (GitHub OAuth credentials, JWT signing key)
+- `s3.tf` — Deployment bucket for Lambda artifacts (versioned, public access blocked)
+- `budget.tf` — AWS Budgets + SNS email alerts
 - `variables.tf` / `outputs.tf` — Input variables and output values
 
-**Web application (`site/`):**
-- `index.html` — Static site content deployed to EC2/IIS
+**Web application:**
+- `site/` — React SPA (Vite build) deployed to S3 + CloudFront
+- `api/` — Node.js Lambda backend (guestbook with GitHub OAuth)
 
 **State management:** Remote S3 backend (bucket name configured via `-backend-config` in CI and local init) with DynamoDB locking (`terraform-state-locks`), encryption enabled.
 
-**Defaults:** Region `us-west-2`, instance type `t3.small`, environment `dev`, domain `forfun.gillzhub.com`. Uses default VPC (first 2 subnets for ALB).
+**Defaults:** Region `us-west-2`, environment `dev`, domain `forfun.gillzhub.com`.
 
 ## CI/CD (GitHub Actions)
 
 - `.github/workflows/terraform-plan-apply.yml` — Two-job workflow: `plan` job runs on PRs and pushes to `main` (fmt, init, validate, plan, PR comment); `apply` job runs on push to `main` only, gated by the `production` GitHub Environment (requires manual approval). Plan artifact is passed between jobs. Uses OIDC for AWS auth. Concurrency group prevents parallel runs.
-- `.github/workflows/deploy-site.yml` — On push to `main` (when `site/` changes) or manual dispatch: uploads `site/index.html` to S3, sends SSM command to EC2 to download via presigned URL and restart IIS.
+- `.github/workflows/deploy-site.yml` — On push to `main` (when `site/` changes) or manual dispatch: builds React SPA with Vite, syncs to S3, invalidates CloudFront cache.
+- `.github/workflows/deploy-api.yml` — On push to `main` (when `api/` changes) or manual dispatch: builds Lambda ZIP with esbuild, uploads to S3, updates Lambda function code.
 
 ## Conventions
 

@@ -11,15 +11,9 @@ variable "hosted_zone_name" {
 }
 
 variable "region" {
-  description = "AWS region for ALB and instance"
+  description = "AWS region for infrastructure"
   type        = string
   default     = "us-west-2"
-}
-
-variable "instance_type" {
-  description = "EC2 instance type for the Windows server"
-  type        = string
-  default     = "t3.small"
 }
 
 variable "environment" {
