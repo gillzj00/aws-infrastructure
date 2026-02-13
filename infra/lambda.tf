@@ -42,6 +42,7 @@ resource "aws_iam_role_policy" "guestbook_lambda_dynamodb" {
       Action = [
         "dynamodb:GetItem",
         "dynamodb:PutItem",
+        "dynamodb:DeleteItem",
         "dynamodb:Scan",
         "dynamodb:Query"
       ]

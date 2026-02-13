@@ -16,7 +16,7 @@
  *   event.body        → request body as string (for POST)
  */
 import { login, callback, me, logout } from "./routes/auth.mjs";
-import { list, sign } from "./routes/guestbook.mjs";
+import { list, sign, remove } from "./routes/guestbook.mjs";
 
 // Route map — keys match the routeKey values configured in api_gateway.tf
 const routes = {
@@ -26,6 +26,7 @@ const routes = {
   "POST /auth/logout": logout,
   "GET /guestbook": list,
   "POST /guestbook": sign,
+  "DELETE /guestbook/{entryId}": remove,
 };
 
 export async function handler(event) {
