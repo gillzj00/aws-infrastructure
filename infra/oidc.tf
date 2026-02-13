@@ -143,6 +143,38 @@ resource "aws_iam_role_policy" "github_actions_policy" {
         Resource = [
           "arn:aws:ec2:${var.region}:${data.aws_caller_identity.current.account_id}:instance/*"
         ]
+      },
+      {
+        # Lambda deployment: update function code from S3
+        Effect = "Allow"
+        Action = [
+          "lambda:UpdateFunctionCode",
+          "lambda:GetFunction"
+        ]
+        Resource = [aws_lambda_function.guestbook_api.arn]
+      },
+      {
+        # CloudFront cache invalidation after SPA deploys
+        Effect = "Allow"
+        Action = [
+          "cloudfront:CreateInvalidation",
+          "cloudfront:GetInvalidation"
+        ]
+        Resource = [aws_cloudfront_distribution.site.arn]
+      },
+      {
+        # S3 site bucket: upload/delete SPA build artifacts
+        Effect = "Allow"
+        Action = [
+          "s3:PutObject",
+          "s3:GetObject",
+          "s3:ListBucket",
+          "s3:DeleteObject"
+        ]
+        Resource = [
+          aws_s3_bucket.site.arn,
+          "${aws_s3_bucket.site.arn}/*"
+        ]
       }
     ]
   })
