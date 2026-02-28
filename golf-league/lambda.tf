@@ -99,8 +99,8 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
-      Effect   = "Allow"
-      Action   = ["bedrock:InvokeModel"]
+      Effect = "Allow"
+      Action = ["bedrock:InvokeModel"]
       Resource = [
         "arn:aws:bedrock:${var.region}::foundation-model/amazon.nova-micro-v1:0",
         "arn:aws:bedrock:us:*:inference-profile/us.amazon.nova-micro-v1:0"
