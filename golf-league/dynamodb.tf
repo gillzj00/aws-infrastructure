@@ -103,6 +103,30 @@ resource "aws_dynamodb_table" "rounds" {
   )
 }
 
+resource "aws_dynamodb_table" "rate_limits" {
+  name         = "${var.project_name}-rate-limits"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "pk"
+
+  attribute {
+    name = "pk"
+    type = "S"
+  }
+
+  ttl {
+    attribute_name = "ttl"
+    enabled        = true
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name        = "${var.project_name}-rate-limits"
+      Environment = var.environment
+    }
+  )
+}
+
 resource "aws_dynamodb_table" "scores" {
   name         = "${var.project_name}-scores"
   billing_mode = "PAY_PER_REQUEST"

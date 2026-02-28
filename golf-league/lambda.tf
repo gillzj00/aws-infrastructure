@@ -56,6 +56,7 @@ resource "aws_iam_role_policy" "lambda_dynamodb" {
         "${aws_dynamodb_table.rounds.arn}/index/*",
         aws_dynamodb_table.scores.arn,
         "${aws_dynamodb_table.scores.arn}/index/*",
+        aws_dynamodb_table.rate_limits.arn,
       ]
     }]
   })
@@ -147,6 +148,7 @@ resource "aws_lambda_function" "api" {
       PLAYERS_TABLE_NAME       = aws_dynamodb_table.players.name
       ROUNDS_TABLE_NAME        = aws_dynamodb_table.rounds.name
       SCORES_TABLE_NAME        = aws_dynamodb_table.scores.name
+      RATE_LIMITS_TABLE_NAME   = aws_dynamodb_table.rate_limits.name
       SSM_GITHUB_CLIENT_ID     = aws_ssm_parameter.github_oauth_client_id.name
       SSM_GITHUB_CLIENT_SECRET = aws_ssm_parameter.github_oauth_client_secret.name
       SSM_AUTH_SIGNING_KEY     = aws_ssm_parameter.auth_signing_key.name
