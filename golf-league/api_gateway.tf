@@ -7,11 +7,10 @@ resource "aws_apigatewayv2_api" "api" {
   description   = "HTTP API for golf league backend"
 
   cors_configuration {
-    allow_origins     = ["https://*.${var.hosted_zone_name}"]
-    allow_methods     = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
-    allow_headers     = ["Content-Type", "Authorization"]
-    allow_credentials = true
-    max_age           = 86400
+    allow_origins = ["*"]
+    allow_methods = ["GET", "POST", "PUT", "DELETE", "OPTIONS"]
+    allow_headers = ["Content-Type", "Authorization"]
+    max_age       = 86400
   }
 
   tags = merge(

@@ -108,6 +108,30 @@ resource "aws_cloudwatch_log_group" "lambda" {
 }
 
 # ──────────────────────────────────────────────
+# Placeholder deployment package — CI/CD replaces this with the real build
+# ──────────────────────────────────────────────
+data "archive_file" "lambda_placeholder" {
+  type        = "zip"
+  output_path = "${path.module}/.placeholder.zip"
+
+  source {
+    content  = "#!/bin/sh\nexit 0"
+    filename = "bootstrap"
+  }
+}
+
+resource "aws_s3_object" "lambda_code" {
+  bucket = aws_s3_bucket.deploy.id
+  key    = "lambda/${var.project_name}-api.zip"
+  source = data.archive_file.lambda_placeholder.output_path
+  etag   = data.archive_file.lambda_placeholder.output_md5
+
+  lifecycle {
+    ignore_changes = [source, etag]
+  }
+}
+
+# ──────────────────────────────────────────────
 # Lambda Function (Go on ARM64/Graviton)
 # ──────────────────────────────────────────────
 resource "aws_lambda_function" "api" {
@@ -141,6 +165,7 @@ resource "aws_lambda_function" "api" {
   depends_on = [
     aws_cloudwatch_log_group.lambda,
     aws_iam_role_policy_attachment.lambda_logs,
+    aws_s3_object.lambda_code,
   ]
 
   tags = merge(
