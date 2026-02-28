@@ -120,17 +120,6 @@ data "archive_file" "lambda_placeholder" {
   }
 }
 
-resource "aws_s3_object" "lambda_code" {
-  bucket = aws_s3_bucket.deploy.id
-  key    = "lambda/${var.project_name}-api.zip"
-  source = data.archive_file.lambda_placeholder.output_path
-  etag   = data.archive_file.lambda_placeholder.output_md5
-
-  lifecycle {
-    ignore_changes = [source, etag]
-  }
-}
-
 # ──────────────────────────────────────────────
 # Lambda Function (Go on ARM64/Graviton)
 # ──────────────────────────────────────────────
@@ -144,9 +133,13 @@ resource "aws_lambda_function" "api" {
   timeout       = 10                # OAuth callback makes external HTTP calls
   memory_size   = 256               # More memory = proportionally more CPU
 
-  # Source from S3 so CI/CD can update code independently of Terraform
-  s3_bucket = aws_s3_bucket.deploy.id
-  s3_key    = "lambda/${var.project_name}-api.zip"
+  # Placeholder for initial creation — CI/CD deploys the real build via S3
+  filename         = data.archive_file.lambda_placeholder.output_path
+  source_code_hash = data.archive_file.lambda_placeholder.output_base64sha256
+
+  lifecycle {
+    ignore_changes = [filename, source_code_hash, s3_bucket, s3_key]
+  }
 
   environment {
     variables = {
@@ -165,7 +158,6 @@ resource "aws_lambda_function" "api" {
   depends_on = [
     aws_cloudwatch_log_group.lambda,
     aws_iam_role_policy_attachment.lambda_logs,
-    aws_s3_object.lambda_code,
   ]
 
   tags = merge(
