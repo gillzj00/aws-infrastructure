@@ -91,6 +91,24 @@ resource "aws_iam_role_policy" "lambda_ssm" {
   })
 }
 
+# Bedrock access — invoke Nova Micro for golf quote generation
+resource "aws_iam_role_policy" "lambda_bedrock" {
+  name = "${var.project_name}-bedrock-access"
+  role = aws_iam_role.lambda.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect = "Allow"
+      Action = ["bedrock:InvokeModel"]
+      Resource = [
+        "arn:aws:bedrock:*::foundation-model/amazon.nova-micro-v1:0",
+        "arn:aws:bedrock:${var.region}:${data.aws_caller_identity.current.account_id}:inference-profile/us.amazon.nova-micro-v1:0"
+      ]
+    }]
+  })
+}
+
 # ──────────────────────────────────────────────
 # CloudWatch Log Group (explicit so Terraform manages retention)
 # ──────────────────────────────────────────────
@@ -130,7 +148,7 @@ resource "aws_lambda_function" "api" {
   handler       = "bootstrap"       # Go binary compiled for Lambda
   runtime       = "provided.al2023" # Custom runtime for Go
   architectures = ["arm64"]         # Graviton — cheaper + faster for Go
-  timeout       = 10                # OAuth callback makes external HTTP calls
+  timeout       = 15                # OAuth callback + Bedrock calls make external HTTP calls
   memory_size   = 256               # More memory = proportionally more CPU
 
   # Placeholder for initial creation — CI/CD deploys the real build via S3
