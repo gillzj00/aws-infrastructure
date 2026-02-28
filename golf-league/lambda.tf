@@ -152,6 +152,7 @@ resource "aws_lambda_function" "api" {
       SSM_AUTH_SIGNING_KEY     = aws_ssm_parameter.auth_signing_key.name
       API_DOMAIN               = "api.golf.${var.hosted_zone_name}"
       HOSTED_ZONE_NAME         = var.hosted_zone_name
+      ALLOWED_GITHUB_LOGIN     = var.allowed_github_login
     }
   }
 

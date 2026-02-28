@@ -44,3 +44,9 @@ variable "auth_signing_key" {
   type        = string
   sensitive   = true
 }
+
+variable "allowed_github_login" {
+  description = "GitHub username allowed to authenticate as superadmin"
+  type        = string
+  default     = "gillzj00"
+}
