@@ -130,5 +130,11 @@ jobs:
           name: tfplan-golf-league
           path: golf-league
 
+      - name: Create placeholder Lambda package
+        run: |
+          printf '#!/bin/sh\nexit 0' > bootstrap
+          zip .placeholder.zip bootstrap
+          rm bootstrap
+
       - name: Terraform Apply
         run: terraform apply -input=false tfplan
