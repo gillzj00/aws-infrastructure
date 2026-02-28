@@ -5,6 +5,9 @@ on:
     branches:
       - main
   pull_request:
+    paths:
+      - 'infra/**'
+      - '.github/workflows/terraform-plan-apply.yml'
 
 # Prevent concurrent Terraform runs — a second push to main while an apply
 # is in progress would race on the state file and potentially corrupt it.
