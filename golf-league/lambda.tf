@@ -101,7 +101,10 @@ resource "aws_iam_role_policy" "lambda_bedrock" {
     Statement = [{
       Effect   = "Allow"
       Action   = ["bedrock:InvokeModel"]
-      Resource = ["arn:aws:bedrock:${var.region}::foundation-model/amazon.nova-micro-v1:0"]
+      Resource = [
+        "arn:aws:bedrock:${var.region}::foundation-model/amazon.nova-micro-v1:0",
+        "arn:aws:bedrock:us:*:inference-profile/us.amazon.nova-micro-v1:0"
+      ]
     }]
   })
 }
