@@ -36,6 +36,7 @@ terraform.rc
 .DS_Store
 .vscode
 .vscode/*
+*.code-workspace
 
 # Local environment files
 .envrc
